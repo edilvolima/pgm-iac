@@ -1,31 +1,20 @@
 [artefatos]
-'192.168.1.100' 
+192.168.1.100 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_artefatos'
 
 [dados]
-'192.168.1.101'
+192.168.1.101 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_dados'
 
 [desenvolvimento]
-'192.168.1.102'
+192.168.1.102 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_desenvolvimento'
 
 [monitoramento]
-'192.168.1.103'
+192.168.1.103 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_monitoramento'
 
-[orquestracao-control]
-'192.168.1.104'
+[orquestracaoControl]
+192.168.1.104 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_orquestracao-control'
 
-[orquestracao-worker-1]
-'192.168.1.105'
+[orquestracaoWorker1]
+192.168.1.105 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_orquestracao-worker-1'
 
-[orquestracao-worker-2]
-'192.168.1.106'
-
-
-'''
-configure_vm(config, "artefatos", "192.168.1.100")
-configure_vm(config, "dados", "192.168.1.101")
-configure_vm(config, "desenvolvimento", "192.168.1.102")
-configure_vm(config, "monitoramento", "192.168.1.103")
-configure_vm(config, "orquestracao-control", "192.168.1.104")
-configure_vm(config, "orquestracao-worker-1", "192.168.1.105")
-configure_vm(config, "orquestracao-worker-2", "192.168.1.106")
-'''
+[orquestracaoWorker2]
+192.168.1.106 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_orquestracao-worker-2'
