@@ -1,19 +1,31 @@
-[desenvolvimento]
-
-
 [artefatos]
-
+'192.168.1.100' 
 
 [dados]
+'192.168.1.101'
 
-
+[desenvolvimento]
+'192.168.1.102'
 
 [monitoramento]
+'192.168.1.103'
+
+[orquestracao-control]
+'192.168.1.104'
+
+[orquestracao-worker-1]
+'192.168.1.105'
+
+[orquestracao-worker-2]
+'192.168.1.106'
 
 
-
-[orquestracao-control-plane]
-
-
-
-[orquestracao-worker]
+'''
+configure_vm(config, "artefatos", "192.168.1.100")
+configure_vm(config, "dados", "192.168.1.101")
+configure_vm(config, "desenvolvimento", "192.168.1.102")
+configure_vm(config, "monitoramento", "192.168.1.103")
+configure_vm(config, "orquestracao-control", "192.168.1.104")
+configure_vm(config, "orquestracao-worker-1", "192.168.1.105")
+configure_vm(config, "orquestracao-worker-2", "192.168.1.106")
+'''
