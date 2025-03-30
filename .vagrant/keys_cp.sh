@@ -20,7 +20,8 @@ for name in "${!hosts[@]}"; do
         para o projeto: máquina $name com IP ${hosts[$name]}..."
 
   # Copia do diretorio do Vagrant no Windows: C:/Vagrant
-  cp /mnt/c/Vagrant/.vagrant/machines/$name/virtualbox/private_key pgm_$name
+  cp -Rf /mnt/c/Vagrant/.vagrant/machines/$name/virtualbox/private_key ./.vagrant/pgm_$name
+  chmod 600 ./.vagrant/pgm_$name
   
   # Verificação de sucesso
   if [ $? -eq 0 ]; then

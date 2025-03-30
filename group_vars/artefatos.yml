@@ -1,0 +1,16 @@
+---
+# Variaveis do Postgres
+PG_USER:  "postgres"
+PG_PASSWORD: "123456"
+ROOT_DATA_DIR: "/home/{{ ansible_user }}/jfrog/artifactory"
+
+# Variaveis do JFrog Artifactory
+DOCKER_REGISTRY: "releases-docker.jfrog.io"
+#DOCKER_REGISTRY: "docker.binary.io"
+ARTIFACTORY_VERSION: "7.104.14"
+JF_ROUTER_ENTRYPOINTS_EXTERNALPORT: "8082"
+JF_SHARED_NODE_IP: "{{ ARTEFATOS_IP }}"
+JF_SHARED_NODE_ID: "artefatos"
+JF_SHARED_NODE_NAME: "artefatos"
+
+# Variaveis do Nginx

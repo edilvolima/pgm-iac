@@ -1,1 +1,94 @@
 ---
+- name: Instala e configura o JFrog Artifactory com PostgreSQL via Docker Compose
+  hosts: artefatos
+  become: yes
+
+  vars:
+    docker_compose_file_path: "{{ ROOT_DATA_DIR }}/docker-compose.yml"
+    volume_jfrog_path: "{{ ROOT_DATA_DIR }}/volumes/artifactory/var/etc/system.yaml"
+
+  tasks:
+    - name: Remover pacotes que podem ter algum conflito com o Docker
+      apt:
+        name:
+          - docker.io
+          - docker-doc
+          - docker-compose
+          - podman-docker
+          - containerd
+          - runc
+        state: absent
+      become: yes
+
+    - name: Atualiza o cache de pacotes do sistema
+      apt:
+        update_cache: yes
+
+    - name: Instala dependências do sistema
+      apt:
+        name: 
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+    
+    - name: Adiciona chave GPG oficial do Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Adiciona repositório Docker
+      apt_repository:
+        repo: "deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Instala o Docker e Docker Compose
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Garante que o serviço Docker está em execução
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Cria o diretorio de instalacao 
+      file:
+        path: "{{ ROOT_DATA_DIR }}"
+        state: directory
+        mode: '0755'
+
+    - name: Cria o diretorio de system.yaml
+      file:
+        path: "{{ ROOT_DATA_DIR }}/volumes/artifactory/var/etc"
+        state: directory
+        mode: '0755'
+
+    - name: Copia o arquivo docker-compose.yml para o host remoto
+      template:
+        src: ./templates/artefatos/docker-compose.yml.j2
+        dest: "{{ docker_compose_file_path }}"
+        owner: "{{ ansible_user }}"
+        mode: '0755'
+      become: yes
+          
+    - name: Copia o arquivo system.yaml para o host remoto
+      template:
+        src: ./templates/artefatos/system.yaml.j2
+        dest: "{{ volume_jfrog_path }}"
+        owner: "{{ ansible_user }}"
+        mode: '0755'
+      become: yes
+
+    - name: Executa o Docker Compose para iniciar os containers
+      command: docker compose up -d
+      args:
+        chdir: "{{ ROOT_DATA_DIR }}"
+

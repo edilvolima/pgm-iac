@@ -20,6 +20,7 @@ for name in "${!hosts[@]}"; do
 
   # Comando para copiar a chave pública para o IP correspondente
   ssh-copy-id -i ~/.ssh/pgm_$name.pub $USER@${hosts[$name]}
+  #ssh-copy-id -i ~/.ssh/id_rsa.pub $USER@${hosts[$name]}
   
   # Verificação de sucesso
   if [ $? -eq 0 ]; then
@@ -28,3 +29,6 @@ for name in "${!hosts[@]}"; do
     echo "Erro ao copiar a chave pública para $name (${hosts[$name]}). Verifique a conexão SSH."
   fi
 done
+
+
+sh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMhG1md3EnS6qGN59gTH4U5Qz6ETGoBo4h7Ac0yHk833 vagrant
