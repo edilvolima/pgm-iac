@@ -1,0 +1,6 @@
+---
+- name: Configurar Camada de Dados - Postgres
+  hosts: dados
+  become: yes
+  roles:
+    - dados

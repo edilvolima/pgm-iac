@@ -1,0 +1,6 @@
+---
+- name: Configurar Camada de Artefatos - Harbor
+  hosts: artefatos
+  become: yes
+  roles:
+    - artefatos

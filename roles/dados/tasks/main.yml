@@ -1,1 +1,76 @@
 ---
+- name: Remover pacotes que podem ter algum conflito com o Docker
+  apt:
+    name:
+      - docker.io
+      - docker-doc
+      - docker-compose
+      - podman-docker
+      - containerd
+      - runc
+    state: absent
+
+- name: Atualiza o cache de pacotes do sistema
+  apt:
+    update_cache: yes
+
+- name: Instala dependências do sistema
+  apt:
+    name: 
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Adiciona chave GPG oficial do Docker
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Adiciona repositório Docker
+  apt_repository:
+    repo: "deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Instala o Docker e Docker Compose
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+    update_cache: yes
+
+- name: Adicionar usuário ao grupo docker
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop: "{{ docker_users }}"
+
+- name: Habilitar e iniciar serviço Docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Cria o diretorio de instalacao 
+  file:
+    path: "{{ ROOT_DATA_DIR }}"
+    state: directory
+    mode: '0755'
+
+- name: Copia o arquivo docker-compose.yml para o host remoto
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ ROOT_DATA_DIR }}/docker-compose.yml"
+    owner: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Executa o Docker Compose para iniciar os containers
+  command: docker compose up -d
+  args:
+    chdir: "{{ ROOT_DATA_DIR }}"

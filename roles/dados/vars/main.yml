@@ -1,0 +1,10 @@
+---
+# Variaveis do Postgres
+PG_USER:  "rdp_user"
+PG_PASSWORD: "v7KI84n8S3o2"
+ROOT_DATA_DIR: "$HOME/postgres"
+
+
+# Docker
+docker_users:
+      - "{{ ansible_user }}"

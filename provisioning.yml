@@ -5,7 +5,7 @@
 
   vars:
     docker_compose_file_path: "{{ ROOT_DATA_DIR }}/docker-compose.yml"
-    volume_jfrog_path: "{{ ROOT_DATA_DIR }}/volumes/artifactory/var/etc/system.yaml"
+    volume_jfrog_path: "{{ ROOT_DATA_DIR }}/var/etc/system.yaml"
 
   tasks:
     - name: Remover pacotes que podem ter algum conflito com o Docker
@@ -23,6 +23,7 @@
     - name: Atualiza o cache de pacotes do sistema
       apt:
         update_cache: yes
+      become: yes
 
     - name: Instala dependências do sistema
       apt:

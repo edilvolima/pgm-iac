@@ -1,0 +1,33 @@
+---
+# Instalacao
+ROOT_DATA_DIR: "$HOME/harbor"
+
+postgres_harbor_password: "pg123456"
+
+# Criar certificados
+ssl_dir: /etc/harbor/ssl
+
+ca_crt_path: "{{ ssl_dir }}/ca.crt"
+ca_key_path: "{{ ssl_dir }}/ca.key"
+harbor_key_path: "{{ ssl_dir }}/{{ harbor_domain }}.key"
+harbor_crt_path: "{{ ssl_dir }}/{{ harbor_domain }}.crt"
+harbor_csr_path: "{{ ssl_dir }}/{{ harbor_domain }}.csr"
+
+country: "BR"
+state: "Rio Grande do Norte"
+locality: "Natal"
+organization: "PGM"
+unit: "TI"
+email: "pgm.ti@natal.rn.gov.br"
+
+
+# Instalacao do Harbor
+harbor_version: "2.12.2"
+harbor_domain: "harbor.pgm-ia.natal.rn.gov.br"         # Substitua pelo seu domínio
+harbor_admin_password: "Harbor12345"  # Senha segura para o admin
+
+
+# Docker
+docker_cert_dir: "/etc/docker/certs.d"
+docker_users:
+      - "{{ ansible_user }}"

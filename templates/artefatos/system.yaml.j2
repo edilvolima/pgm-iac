@@ -1,14 +1,11 @@
 shared:
-    node:
-        ip: {{ ARTEFATOS_IP }}
-        id: artifactory-one
-        name: artifactory-one
-    database:
-        type: postgresql
-        driver: org.postgresql.Driver
-        password: {{ PG_PASSWORD }}
-        username: {{ PG_USER }}
-        url: jdbc:postgresql://postgres:5432/artifactory
-router:
-    entrypoints:
-        externalPort: 8080
+  node:
+    ip: {{ ARTEFATOS_IP }}
+    id: artifactory-one
+    name: artifactory-one
+  database:
+    type: postgresql
+    driver: org.postgresql.Driver
+    password: {{ PG_PASSWORD }}
+    username: {{ PG_USER }}
+    url: jdbc:postgresql://postgres:5432/artifactory

@@ -1,1 +1,215 @@
 ---
+- name: Remover pacotes que podem ter algum conflito com o Docker
+  apt:
+    name:
+      - docker.io
+      - docker-doc
+      - docker-compose
+      - podman-docker
+      - containerd
+      - runc
+    state: absent
+
+- name: Atualiza o cache de pacotes do sistema
+  apt:
+    update_cache: yes
+
+- name: Instala dependências do sistema
+  apt:
+    name: 
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Adiciona chave GPG oficial do Docker
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Adiciona repositório Docker
+  apt_repository:
+    repo: "deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Instala o Docker e Docker Compose
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+    update_cache: yes
+
+- name: Adicionar usuário ao grupo docker
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop: "{{ docker_users }}"
+
+- name: Habilitar e iniciar serviço Docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Cria o diretorio de instalacao 
+  file:
+    path: "{{ ROOT_DATA_DIR }}"
+    state: directory
+    mode: '0755'
+
+- name: Criar diretório para certificados
+  file:
+    path: "{{ ssl_dir }}"
+    state: directory
+    mode: 0755
+
+- name: Gerar chave privada da CA
+  command: |
+    openssl genrsa -out {{ ca_key_path }} 4096
+  
+- name:  Gerar certificado da CA
+  command: | 
+    openssl req -x509 -new -nodes -sha256 -days 3650 \
+    -subj "/C={{ country }}/ST={{ state }}/L={{ locality }}/O={{ organization }}/OU={{ unit }}/CN={{ harbor_domain }}/emailAddress={{ email }}" \
+    -key {{ ca_key_path }}  \
+    -out {{ ca_crt_path }} 
+
+- name: Gerar chave privada do Harbor
+  command: |
+    openssl genrsa -out {{ harbor_key_path }} 4096
+
+- name: Gerar CSR para o Harbor
+  command: |
+    openssl req -sha512 -new \
+    -subj "/C={{ country }}/ST={{ state }}/L={{ locality }}/O={{ organization }}/OU={{ unit }}/CN={{ harbor_domain }}/emailAddress={{ email }}" \
+    -key {{ harbor_key_path }} \
+    -out {{ harbor_csr_path }}
+
+- name: Gerar arquivo v3.ext com extensões x509 v3
+  copy:
+    dest: "{{ ssl_dir }}/v3.ext"
+    content: |
+      authorityKeyIdentifier=keyid,issuer
+      basicConstraints=CA:FALSE
+      keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+      extendedKeyUsage = serverAuth
+      subjectAltName = @alt_names
+
+      [alt_names]
+      DNS.1={{ harbor_domain }}
+      DNS.2=harbor
+      DNS.3=harbor.pgm
+    mode: 0644
+
+- name: Gerar o CRT do Harbor
+  command: |
+    openssl x509 -req -sha512 -days 3650 \
+    -extfile {{ ssl_dir }}/v3.ext \
+    -CA {{ ca_crt_path }} -CAkey {{ ca_key_path }} -CAcreateserial \
+    -in {{ harbor_csr_path }} \
+    -out {{ harbor_crt_path }} 
+
+# - name: Criar diretório para os certificados do harbor
+#   file:
+#     path: "{{ harbor_cert_dir}}"
+#     state: directory
+#     mode: '0755'  
+
+# - name: Copiar chave privada e certificado para dentro do Harbor
+#   copy:
+#     src: "{{ item.src }}"
+#     dest: "{{item.dest }}"
+#     remote_src: yes
+#     mode: 0644
+#   loop:
+#     - { src: "{{ harbor_key_path }}", dest: "{{ harbor_cert_dir }}/{{ harbor_domain }}.key" }
+#     - { src: "{{ harbor_crt_path }}", dest: "{{ harbor_cert_dir }}/{{ harbor_domain }}.crt" }
+
+- name: Converter CRT do Harbor para CERT
+  command: |
+    openssl x509 -inform PEM \
+    -in {{ harbor_crt_path }} \
+    -out {{ ssl_dir }}/{{ harbor_domain }}.cert
+
+- name: Criar diretório para os certificados do Docker
+  file:
+    path: "{{ docker_cert_dir }}/{{ harbor_domain }}"
+    state: directory
+    mode: '0755'  
+
+- name: Copiar CA.crt, Harbor.key e Harbor.cert para o Docker 
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    remote_src: yes
+    mode: 0644
+  loop:
+    - { src: "{{ ca_crt_path }}", dest: "{{ docker_cert_dir }}/{{ harbor_domain }}.crt" }
+    - { src: "{{ harbor_key_path }}", dest: "{{ docker_cert_dir }}/{{ harbor_domain }}.key" }
+    - { src: "{{ ssl_dir }}/{{ harbor_domain }}.cert", dest: "{{ docker_cert_dir }}/{{ harbor_domain }}.cert" }
+
+
+- name: Baixar Harbor
+  get_url:
+    url: "https://github.com/goharbor/harbor/releases/download/v{{ harbor_version }}/harbor-offline-installer-v{{ harbor_version }}.tgz"
+    dest: "/tmp/harbor.tgz"
+
+- name: Extrair Harbor
+  unarchive:
+    src: "/tmp/harbor.tgz"
+    dest: "{{ ROOT_DATA_DIR }}"
+    remote_src: yes
+    extra_opts: ["--strip-components=1"]
+
+# 3.1 Configurar harbor.yml
+- name: Configurar harbor.yml
+  template:
+    src: "harbor.yml.j2"
+    dest: "{{ ROOT_DATA_DIR }}/harbor.yml"
+    mode: 0644
+
+# ===== Parte 4: Instalar Harbor =====
+- name: Executar script de instalação
+  command: "./install.sh --with-trivy"
+  args:
+    chdir: "{{ ROOT_DATA_DIR }}"
+  environment:
+    DOCKER_CONTENT_TRUST: "1"
+
+# ===== Parte 5: Configurar Docker para confiar na CA =====
+- name: Configurar Docker para usar a CA
+  block:
+    - name: Criar diretório de certificados do Docker
+      file:
+        path: "/etc/docker/certs.d/{{ harbor_domain }}"
+        state: directory
+        mode: 0755
+
+    - name: Copiar certificado da CA
+      copy:
+        src: "/etc/harbor/ssl/ca.crt"
+        dest: "/etc/docker/certs.d/{{ harbor_domain }}/ca.crt"
+        remote_src: yes
+        mode: 0644
+
+    - name: Reiniciar Docker
+      service:
+        name: docker
+        state: restarted
+
+# ===== Parte 6: Verificar instalação =====
+- name: Verificar se Harbor está rodando
+  command: "docker ps --filter 'name=harbor' --format '{{ '{{.Names}}' }}'"
+  register: harbor_containers
+  changed_when: false
+
+- name: Exibir status
+  debug:
+    msg: "Harbor instalado com sucesso! Acesse https://{{ harbor_domain }}"
+  when: "'harbor-core' in harbor_containers.stdout"
