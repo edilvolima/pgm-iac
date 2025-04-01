@@ -1,6 +1,5 @@
 ---
-- name: Restart Docker
-  listen: Restart Docker # Handler é chamado pelos notifies
+- name: restart docker
   systemd:
     name: docker
     state: restarted
