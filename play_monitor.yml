@@ -1,0 +1,40 @@
+---
+- name: Teste de comunicacao
+  hosts: infra
+  become: yes
+  tasks:
+    - name: Exibir resumo de recursos
+      debug:
+        msg: |
+          --- RECURSOS DA VM --- 
+          Hostname: {{ ansible_hostname }} 
+          SO: {{ ansible_distribution }} {{ ansible_distribution_version }} 
+          CPU: {{ ansible_processor_vcpus }} cores 
+          Memória Total: {{ ansible_memtotal_mb|int / 1024 }}GB 
+          Memória Livre: {{ ansible_memfree_mb|int / 1024 }}GB 
+          Discos: 
+          {% for mount in ansible_mounts %} 
+          - {{ mount.device }} ({{ mount.mount }}): {{ mount.size_total|int / 1073741824 }}GB 
+          {% endfor %} 
+          Uptime: {{ ansible_uptime_seconds|int / 3600 }} horas 
+
+    - name: Verificar uso atual de CPU
+      ansible.builtin.shell: |
+        grep 'cpu ' /proc/stat | 
+        awk '{usage=($2+$4)*100/($2+$4+$5)} 
+        END {printf "%.1f", usage}'
+      register: cpu_usage
+      changed_when: false
+
+    - name: Verificar uso de memória
+      ansible.builtin.command: free -m
+      register: memory
+      changed_when: false
+
+    - name: Exibir resultados
+      debug:
+        msg:
+          - "Uso de CPU: {{ cpu_usage.stdout }}%"
+          - "Memória Total: {{ memory.stdout_lines[1].split()[1] }}MB"
+          - "Memória Usada: {{ memory.stdout_lines[1].split()[2] }}MB"
+          - "Memória Livre: {{ memory.stdout_lines[1].split()[3] }}MB"

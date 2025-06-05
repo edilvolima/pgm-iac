@@ -1,0 +1,13 @@
+---
+- name: Teste de comunicacao
+  hosts: infra
+  become: yes
+  tasks:
+    - name: Teste de ping
+      ping:
+        data: "pong"
+      register: ping_result
+
+    - name: Exibir resultado do ping
+      debug:
+        var: ping_result

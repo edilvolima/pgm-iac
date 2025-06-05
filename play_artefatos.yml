@@ -1,4 +1,6 @@
 ---
+- import_playbook: play_all.yml
+
 - name: Configurar Camada de Artefatos - Harbor
   hosts: artefatos
   become: yes

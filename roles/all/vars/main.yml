@@ -1,0 +1,4 @@
+---
+# Docker
+docker_users:
+      - "{{ ansible_user }}"

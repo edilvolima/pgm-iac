@@ -1,0 +1,8 @@
+---
+- import_playbook: play_all.yml
+
+- name: Configurar Camada de Orquestracao
+  hosts: localhost
+  become: no
+  roles:
+    - orquestracao

@@ -1,0 +1,27 @@
+---
+- name: Criar usuário 'pgm-user'
+  user:
+    name: pgm-user
+    groups: docker
+    append: yes
+    shell: /bin/bash
+    state: present
+  become: yes
+
+- name: Configurar sudo sem senha para 'pgm-user'
+  copy:
+    dest: /etc/sudoers.d/pgm-user
+    content: "pgm-user ALL=(ALL) NOPASSWD: ALL"
+  become: yes
+
+- name: Verifica se $HOME/.kube existe
+  file:
+    path: ~/.kube
+    state: directory
+    mode: '0755'
+  run_once: True
+  become: yes
+
+- include_tasks: deploy-rke.yml
+- include_tasks: verificacao-rke.yml
+

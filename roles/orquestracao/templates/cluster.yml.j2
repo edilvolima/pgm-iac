@@ -1,0 +1,21 @@
+nodes:
+{% for host in groups['orquestracaoControl'] %}
+  - address: {{ hostvars[host]['ansible_host'] | default(host) }}
+    user: vagrant
+    role:
+      - controlplane
+      - etcd
+    ssh_key_path: ".vagrant/pgm_{{ hostvars[host]['name'] }}"
+{% endfor %}
+{% for host in groups['orquestracaoWorker'] %}
+  - address: {{ hostvars[host]['ansible_host'] | default(host) }}
+    user: vagrant
+    role:
+      - worker
+    ssh_key_path: ".vagrant/pgm_{{ hostvars[host]['name'] }}"
+{% endfor %}
+
+services:
+  etcd:
+    snapshot: true
+    retention: 24h
