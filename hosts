@@ -1,0 +1,20 @@
+[artefatos]
+192.168.1.100 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_artefatos'
+
+[dados]
+192.168.1.101 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_dados'
+
+[k8s-tools-controlplane]
+192.168.1.102 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_desenvolvimento'
+
+[k8s-tools-worker1]
+192.168.1.103 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_monitoramento'
+
+[k8s-desenv-controlplane]
+192.168.1.104 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_orquestracao-control'
+
+[k8s-desenv-worker1]
+192.168.1.105 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_orquestracao-worker-1'
+
+[k8s-desenv-worker2]
+192.168.1.106 ansible_user=vagrant ansible_ssh_private_key_file='/home/pgmadmin/.ssh/pgm_orquestracao-worker-2'
