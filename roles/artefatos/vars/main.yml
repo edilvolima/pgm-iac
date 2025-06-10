@@ -31,3 +31,8 @@ harbor_admin_password: "Harbor12345"  # Senha segura para o admin
 docker_cert_dir: "/etc/docker/certs.d"
 docker_users:
       - "{{ ansible_user }}"
+
+# Nexus
+nexus_version: "3.68.1"
+nexus_data_dir: "{{ ROOT_DATA_DIR }}/nexus-data"
+nexus_port: 8081

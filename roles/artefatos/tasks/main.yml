@@ -138,3 +138,20 @@
   debug:
     var: harbor_ps.stdout_lines
 
+# 5. Instalacao do Nexus
+- name: Criar diretorio de dados do Nexus
+  file:
+    path: "{{ nexus_data_dir }}"
+    state: directory
+    mode: '0777' # Nexus runs as non-root user in the container
+
+- name: Configurar docker-compose do Nexus
+  template:
+    src: "nexus-docker-compose.yml.j2"
+    dest: "{{ ROOT_DATA_DIR }}/nexus-docker-compose.yml"
+    mode: 0644
+
+- name: Iniciar container Nexus
+  command: docker compose -f {{ ROOT_DATA_DIR }}/nexus-docker-compose.yml up -d
+  args:
+    chdir: "{{ ROOT_DATA_DIR }}"

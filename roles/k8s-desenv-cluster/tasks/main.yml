@@ -1,0 +1,36 @@
+---
+# ... (existing tasks for user creation, sudo, RKE deployment)
+- name: Create user 'pgm-user'
+  user:
+    name: pgm-user
+    groups: docker
+    append: yes
+    shell: /bin/bash
+    state: present
+  become: yes
+
+- name: Configure sudo without password for 'pgm-user'
+  copy:
+    dest: /etc/sudoers.d/pgm-user
+    content: "pgm-user ALL=(ALL) NOPASSWD: ALL"
+  become: yes
+
+- name: Ensure $HOME/.kube directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/.kube" # Use ansible_env.HOME for robustness
+    state: directory
+    mode: '0755'
+  run_once: true # Should run once, typically on the control node or where kubectl will be used
+  become: no # Usually user's home directory, but depends on Ansible connection user
+
+- include_tasks: deploy-rke.yml
+  # This should target the control plane node or run_once if rke is executed from ansible master
+  # For simplicity, let's assume the play targets k8s-tools-controlplane for these tasks
+
+- include_tasks: verificacao-rke.yml
+  # Similar targeting as deploy-rke.yml
+
+- name: Deploy Rancher
+  include_tasks: deploy-rancher.yml
+  # This should also target the k8s-tools-controlplane node(s)
+  # The tasks inside deploy-rancher.yml use `when: inventory_hostname in groups['k8s-tools-controlplane'][0]`

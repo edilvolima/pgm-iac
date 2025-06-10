@@ -1,6 +1,8 @@
 ---
-- name: Configurar  inicial das VMs
-  hosts: all
-  become: yes
-  roles:
-    - all
+- import_playbook: play_ping.yml
+- import_playbook: play_artefatos.yml
+- import_playbook: play_dados.yml
+# - import_playbook: play_orquestracao.yml # This will be replaced/deactivated
+- import_playbook: play_k8s-tools.yml
+- import_playbook: play_k8s-desenv.yml
+# - import_playbook: play_monitor.yml # Assuming this is separate and can run later or is not part of this refactor.

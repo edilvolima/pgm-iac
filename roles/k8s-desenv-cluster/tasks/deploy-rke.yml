@@ -1,0 +1,24 @@
+---
+- name: Baixar binário do RKE
+  get_url:
+    url: "https://github.com/rancher/rke/releases/download/{{ RKE_VERSION }}/rke_linux-amd64"
+    dest: /usr/local/bin/rke
+    mode: '0755'
+  when: not ansible_check_mode
+  become: yes
+
+- name: Gerar cluster.yml a partir do template
+  template:
+    src: cluster.yml.j2
+    dest: ./cluster.yml
+
+- name: Executar RKE para criar o cluster
+  command: rke up --config cluster.yml
+  register: rke_output
+  changed_when: "'Cluster deployed successfully' in rke_output.stdout"
+
+- name: Copiar kubeconfig para ~/.kube
+  copy:
+    src: ./kube_config_cluster.yml
+    dest: "{{ ansible_env.HOME }}/.kube/config-k8s-desenv"
+    remote_src: no

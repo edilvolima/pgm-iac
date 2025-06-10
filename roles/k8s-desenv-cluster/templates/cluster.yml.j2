@@ -1,0 +1,30 @@
+nodes:
+{% for host in groups['k8s-desenv-controlplane'] %}
+  - address: {{ hostvars[host]['ansible_host'] | default(host) }}
+    user: {{ hostvars[host]['ansible_user'] | default('vagrant') }}
+    role:
+      - controlplane
+      - etcd
+    ssh_key_path: "{{ hostvars[host]['ansible_ssh_private_key_file'] }}"
+{% endfor %}
+{% for host in groups['k8s-desenv-worker1'] %}
+  - address: {{ hostvars[host]['ansible_host'] | default(host) }}
+    user: {{ hostvars[host]['ansible_user'] | default('vagrant') }}
+    role:
+      - worker
+    ssh_key_path: "{{ hostvars[host]['ansible_ssh_private_key_file'] }}"
+{% endfor %}
+{% for host in groups['k8s-desenv-worker2'] %}
+  - address: {{ hostvars[host]['ansible_host'] | default(host) }}
+    user: {{ hostvars[host]['ansible_user'] | default('vagrant') }}
+    role:
+      - worker
+    ssh_key_path: "{{ hostvars[host]['ansible_ssh_private_key_file'] }}"
+{% endfor %}
+
+services:
+  etcd:
+    snapshot: true
+    retention: "24h"
+# kubernetes_version: "" # This will be set by RKE_VERSION from vars
+# cluster_name: k8s-desenv # Add cluster name

@@ -1,0 +1,21 @@
+version: '3.7'
+services:
+  nexus:
+    image: "sonatype/nexus3:{{ nexus_version }}"
+    container_name: nexus
+    ports:
+      - "{{ nexus_port }}:8081"
+    volumes:
+      - "{{ nexus_data_dir }}:/nexus-data"
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 32000
+        hard: 40000

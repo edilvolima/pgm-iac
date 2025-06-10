@@ -1,0 +1,60 @@
+---
+- name: Install Rancher CLI on k8s-tools-controlplane
+  become: yes
+  get_url:
+    url: "https://github.com/rancher/cli/releases/download/v2.8.0/rancher-linux-amd64-v2.8.0.tar.gz" # Check for latest version
+    dest: "/tmp/rancher-cli.tar.gz"
+    mode: '0644'
+  when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
+
+- name: Extract Rancher CLI
+  become: yes
+  unarchive:
+    src: "/tmp/rancher-cli.tar.gz"
+    dest: "/usr/local/bin/"
+    extra_opts: ["--strip-components=2", "rancher-v2.8.0/rancher"] # Adjust path based on tar structure
+    remote_src: yes
+    creates: "/usr/local/bin/rancher"
+  when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
+
+- name: Ensure Rancher CLI is executable
+  become: yes
+  file:
+    path: "/usr/local/bin/rancher"
+    mode: "a+x"
+    state: file
+  when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
+
+- name: Display instructions for importing k8s-desenv cluster
+  debug:
+    msg: |
+      #################################################################################
+      ## Manual Steps Required to Import 'k8s-desenv' Cluster into 'k8s-tools' Rancher ##
+      #################################################################################
+      1. Log in to the 'k8s-tools' Rancher UI at:
+         https://{{ hostvars[groups['k8s-tools-controlplane'][0]]['ansible_host'] | default(groups['k8s-tools-controlplane'][0]) }}:{{ rancher_port }}
+         User: admin, Password: {{ rancher_bootstrap_password }} (or your updated password)
+
+      2. Once logged in, navigate to 'Cluster Management' and click 'Import Existing'.
+         Choose 'Generic' as the cluster type. Give it a name (e.g., 'k8s-desenv').
+
+      3. Rancher will provide a command similar to:
+         `kubectl apply -f <URL_PROVIDED_BY_RANCHER>`
+
+      4. On a machine with access to the 'k8s-desenv' cluster's kubeconfig (e.g., this Ansible control node, or the k8s-desenv-controlplane):
+         Ensure KUBECONFIG is set to the path of 'k8s-desenv' cluster's config:
+         `export KUBECONFIG={{ ansible_env.HOME }}/.kube/config-k8s-desenv`
+         Then run the `kubectl apply ...` command provided by Rancher in step 3.
+
+      5. Alternatively, using Rancher CLI on {{ groups['k8s-tools-controlplane'][0] }}:
+         a. Login to Rancher CLI (this might be interactive or require API key setup):
+            `rancher login https://{{ hostvars[groups['k8s-tools-controlplane'][0]]['ansible_host'] | default(groups['k8s-tools-controlplane'][0]) }}:{{ rancher_port }} --token <API_TOKEN>`
+            (You may need to create an API token in the Rancher UI first for the admin user)
+         b. Once logged in and context is set, you would typically register the cluster.
+            The exact Rancher CLI commands for cluster import can be complex and version-specific.
+            Using the UI method (steps 2-4) is generally more straightforward for a one-time import.
+
+      This step requires manual intervention due to the complexity of fully automating
+      secure cluster import via API without dedicated Ansible modules for Rancher.
+      The kubeconfig for 'k8s-desenv' is at: {{ ansible_env.HOME }}/.kube/config-k8s-desenv on the machine where Ansible ran.
+  when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
