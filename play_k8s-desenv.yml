@@ -1,0 +1,10 @@
+---
+- name: Deploy k8s-desenv cluster and Rancher
+  hosts: k8s-desenv-controlplane, k8s-desenv-worker1, k8s-desenv-worker2
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: k8s-desenv-cluster
+      # Similar logic as for k8s-tools-cluster role:
+      # Common setup on all hosts.
+      # RKE & Rancher on the first control plane node of this group.

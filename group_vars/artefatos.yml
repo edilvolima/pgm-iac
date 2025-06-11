@@ -1,8 +1,8 @@
 ---
 # Variaveis do Postgres
-PG_USER:  "postgres"
-PG_PASSWORD: "123456"
-ROOT_DATA_DIR: "$HOMME/jfrog/artifactory"
+# PG_USER:  "postgres" # Moved to group_vars/dados.yml
+# PG_PASSWORD: "123456" # Moved to group_vars/dados.yml
+# ROOT_DATA_DIR: "$HOMME/jfrog/artifactory" # Inherits from group_vars/all.yml for consistency
 
 # Variaveis do JFrog Artifactory
 DOCKER_REGISTRY: "releases-docker.jfrog.io"

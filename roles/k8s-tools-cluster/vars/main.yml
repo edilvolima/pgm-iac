@@ -1,0 +1,6 @@
+---
+RKE_VERSION: "v1.5.9"
+rancher_version: "stable"
+rancher_hostname: "rancher.k8s-tools.local"
+rancher_bootstrap_password: "adminadminadmin"
+rancher_port: 8443

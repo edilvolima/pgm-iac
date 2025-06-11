@@ -1,0 +1,4 @@
+---
+# Overrides for k8s-tools-controlplane specific settings
+# This will override vars in roles/k8s-tools-cluster/vars/main.yml due to precedence
+# rancher_hostname: "rancher.tools.example.com" # Example if a different FQDN is desired

@@ -1,0 +1,6 @@
+---
+RKE_VERSION: "v1.4.13"
+rancher_version: "stable" # Or a specific version for this cluster
+rancher_hostname: "rancher.k8s-desenv.local"
+rancher_bootstrap_password: "desenvadmin"
+rancher_port: 9443
