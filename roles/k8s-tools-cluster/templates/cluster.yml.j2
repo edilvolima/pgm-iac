@@ -17,6 +17,17 @@ nodes:
 {% endfor %}
 {% endfor %}
 
+# services:
+#   etcd:
+#     snapshot: true # Consider making this configurable
+#     retention: 24h # Consider making this configurable
+#   kube-api:
+#     service_node_port_range: "30000-32767" # Default, can be customized
+# ingress:
+#   provider: nginx # Default, can be customized
+cluster_name: k8s-tools
+# kubernetes_version: "" # This will be set by RKE_VERSION variable
+
 services:
   etcd:
     snapshot: true

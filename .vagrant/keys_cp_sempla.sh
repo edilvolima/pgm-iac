@@ -21,7 +21,7 @@ for name in "${!hosts[@]}"; do
   # cp -Rf /mnt/c/IAC/.vagrant/machines/$name/virtualbox/private_key ./.vagrant/pgm_$name
   ssh-copy-id -f $USER@${hosts[$name]}
   chmod 600 ./.vagrant/pgm_$name
-  
+
   # Verificação de sucesso
   if [ $? -eq 0 ]; then
     echo "Chave privada copiada com sucesso"
