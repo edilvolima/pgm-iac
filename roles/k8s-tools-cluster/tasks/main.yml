@@ -21,7 +21,7 @@
     state: directory
     mode: '0755'
   run_once: true # Should run once, typically on the control node or where kubectl will be used
-  become: no # Usually user's home directory, but depends on Ansible connection user
+  become: yes # Usually user's home directory, but depends on Ansible connection user
 
 - include_tasks: deploy-rke.yml
   # This should target the control plane node or run_once if rke is executed from ansible master

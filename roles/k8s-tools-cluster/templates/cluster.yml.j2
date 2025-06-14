@@ -1,40 +1,32 @@
-nodes:
-{% for host in groups['k8s-tools-controlplane'] %}
-  - address: {{ hostvars[host]['ansible_host'] | default(host) }}
-    user: {{ hostvars[host]['ansible_user'] | default('vagrant') }}
-    role:
-      - controlplane
-      - etcd
-    ssh_key_path: "{{ hostvars[host]['ansible_ssh_private_key_file'] }}"
-{% endfor %}
-{% for host in groups['k8s-tools-worker1'] %}
-  - address: {{ hostvars[host]['ansible_host'] | default(host) }}
-    user: {{ hostvars[host]['ansible_user'] | default('vagrant') }}
-    role:
-      - worker
-    ssh_key_path: "{{ hostvars[host]['ansible_ssh_private_key_file'] }}"
-{% endfor %}
+{%# Dicionário que mapeia os grupos do Ansible para as roles do RKE #%}
+{% set node_groups = {
+    'k8s-tools-controlplane': ['controlplane', 'etcd'],
+    'k8s-tools-worker1': ['worker']
+} %}
 
-# services:
-#   etcd:
-#     snapshot: true # Consider making this configurable
-#     retention: 24h # Consider making this configurable
-#   kube-api:
-#     service_node_port_range: "30000-32767" # Default, can be customized
-# ingress:
-#   provider: nginx # Default, can be customized
-# cluster_name: k8s-tools # Add cluster name
-# kubernetes_version: "" # This will be set by RKE_VERSION variable
+nodes:
+{% for group_name, roles in node_groups.items() %}
+{% for host in groups[group_name] %}
+  - address: {{ hostvars[host]['ansible_host'] | default(host) }}
+    user: {{ hostvars[host]['ansible_user'] | default('pgm_user') }}
+    role:
+{% for role in roles %}
+      - {{ role }}
+{% endfor %}
+    ssh_key_path: "{{ hostvars[host]['ansible_private_key_file'] | default(ansible_ssh_private_key_file, true) | default('~/.ssh/id_rsa') }}"
+{% endfor %}
+{% endfor %}
 
 services:
   etcd:
     snapshot: true
     retention: "24h"
-#   kubelet: # Example: increase max pods if necessary
-#     extra_args:
-#       max-pods: "250"
 
-# Add other necessary configurations below, ensuring they are compatible with the KRE version.
-# For now, keep it simple and aligned with the original orquestracao role,
-# focusing on node definitions.
-# We will use RKE_VERSION variable for Kubernetes version.
+# Exemplo de outras configurações:
+#  kube-api:
+#    service_node_port_range: "30000-32767"
+#  ingress:
+#    provider: nginx
+#
+# cluster_name: k8s-tools
+# kubernetes_version: "" # Será definido pela variável RKE_VERSION
