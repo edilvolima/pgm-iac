@@ -34,5 +34,5 @@ docker_users:
 
 # Nexus
 nexus_version: "3.68.1"
-nexus_data_dir: "{{ ROOT_DATA_DIR }}/nexus-data"
+nexus_data_dir: "$HOME/nexus-data"
 nexus_port: 8081
