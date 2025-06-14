@@ -14,6 +14,8 @@
 
 - name: Executar RKE para criar o cluster
   command: rke up --config cluster.yml
+  args:
+    chdir: /vagrant
   register: rke_output
   changed_when: "'Cluster deployed successfully' in rke_output.stdout"
 

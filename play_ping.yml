@@ -1,6 +1,6 @@
 ---
 - name: Teste de comunicacao
-  hosts: infra
+  hosts: all
   become: yes
   tasks:
     - name: Teste de ping

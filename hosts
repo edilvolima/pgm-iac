@@ -5,16 +5,16 @@
 192.168.1.101 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_dados'
 
 [k8s-tools-controlplane]
-192.168.1.102 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_desenvolvimento'
+192.168.1.102 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_k8s-tools-controlplane'
 
 [k8s-tools-worker1]
-192.168.1.103 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_monitoramento'
+192.168.1.103 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_k8s-tools-worker1'
 
 [k8s-desenv-controlplane]
-192.168.1.104 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_orquestracao-control'
+192.168.1.104 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_k8s-desenv-controlplane'
 
 [k8s-desenv-worker1]
-192.168.1.105 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_orquestracao-worker-1'
+192.168.1.105 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_k8s-desenv-worker1'
 
 [k8s-desenv-worker2]
-192.168.1.106 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_orquestracao-worker-2'
+192.168.1.106 ansible_user=vagrant ansible_ssh_private_key_file='.vagrant/pgm_k8s-desenv-worker2'
