@@ -1,4 +1,18 @@
 ---
+- name: Ensure decompression utilities are installed (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - tar
+      - gzip
+      - bzip2
+      - xz-utils
+      - unzip
+      - zstd
+    state: present
+    update_cache: yes # Ensure package cache is updated
+  become: yes # Required to install packages
+  when: "ansible_facts['distribution'] == 'Ubuntu' or ansible_facts['distribution'] == 'Debian'"
+  
 # ... (existing tasks for user creation, sudo, RKE deployment)
 - name: Create user 'pgm-user'
   user:
@@ -7,13 +21,13 @@
     append: yes
     shell: /bin/bash
     state: present
-  become: yes
+  become: true
 
 - name: Configure sudo without password for 'pgm-user'
   copy:
     dest: /etc/sudoers.d/pgm-user
     content: "pgm-user ALL=(ALL) NOPASSWD: ALL"
-  become: yes
+  become: true
 
 - name: Ensure $HOME/.kube directory exists
   file:
@@ -21,7 +35,7 @@
     state: directory
     mode: '0755'
   run_once: true # Should run once, typically on the control node or where kubectl will be used
-  become: yes # Usually user's home directory, but depends on Ansible connection user
+  become: true # Usually user's home directory, but depends on Ansible connection user
 
 - include_tasks: deploy-rke.yml
   # This should target the control plane node or run_once if rke is executed from ansible master

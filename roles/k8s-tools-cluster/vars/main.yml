@@ -1,6 +1,8 @@
 ---
-RKE_VERSION: "v1.5.9"
-rancher_version: "stable"
+RKE_VERSION: "v1.8.3"
+kubectl_version: v1.27.4
+rancher_version: "v2.11.2"
 rancher_hostname: "rancher.k8s-tools.local"
 rancher_bootstrap_password: "adminadminadmin"
 rancher_port: 8443
+rke_dir: "$HOME/rke"

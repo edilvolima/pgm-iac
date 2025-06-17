@@ -16,6 +16,7 @@
 - name: Gerar chave privada da CA
   command: |
     openssl genrsa -out {{ ca_key_path }} 4096
+  run_once: true
   
 - name:  Gerar certificado da CA
   command: | 
@@ -23,10 +24,12 @@
     -subj "/C={{ country }}/ST={{ state }}/L={{ locality }}/O={{ organization }}/OU={{ unit }}/CN={{ harbor_domain }}/emailAddress={{ email }}" \
     -key {{ ca_key_path }}  \
     -out {{ ca_crt_path }} 
+  run_once: true
 
 - name: Gerar chave privada do Harbor
   command: |
     openssl genrsa -out {{ harbor_key_path }} 4096
+  run_once: true
 
 - name: Gerar CSR para o Harbor
   command: |
@@ -34,6 +37,7 @@
     -subj "/C={{ country }}/ST={{ state }}/L={{ locality }}/O={{ organization }}/OU={{ unit }}/CN={{ harbor_domain }}/emailAddress={{ email }}" \
     -key {{ harbor_key_path }} \
     -out {{ harbor_csr_path }}
+  run_once: true
 
 - name: Gerar arquivo v3.ext com extensões x509 v3
   copy:
@@ -44,6 +48,7 @@
       keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
       extendedKeyUsage = serverAuth
       subjectAltName = @alt_names
+  
 
       [alt_names]
       DNS.1={{ harbor_domain }}
@@ -51,6 +56,7 @@
       DNS.3=harbor.local
       IP.1=192.168.1.100
     mode: 0644
+  run_once: true
 
 - name: Gerar o CRT do Harbor
   command: |
@@ -59,18 +65,21 @@
     -CA {{ ca_crt_path }} -CAkey {{ ca_key_path }} -CAcreateserial \
     -in {{ harbor_csr_path }} \
     -out {{ harbor_crt_path }} 
+  run_once: true
 
 - name: Converter CRT do Harbor para CERT
   command: |
     openssl x509 -inform PEM \
     -in {{ harbor_crt_path }} \
     -out {{ ssl_dir }}/{{ harbor_domain }}.cert
+  run_once: true
 
 - name: Criar diretório para os certificados do Docker
   file:
     path: "{{ docker_cert_dir }}/{{ harbor_domain }}"
     state: directory
     mode: '0755'
+  run_once: true
 
 - name: Copiar CA.crt, Harbor.key e Harbor.cert para o Docker
   block:
@@ -86,6 +95,7 @@
       - { src: "{{ ssl_dir }}/{{ harbor_domain }}.cert", dest: "{{ docker_cert_dir }}/{{ harbor_domain }}/{{ harbor_domain }}.cert" }
     notify:
       - restart docker
+    run_once: true
 
   - name: Reiniciar Docker
     meta: flush_handlers
@@ -97,6 +107,7 @@
   get_url:
     url: "https://github.com/goharbor/harbor/releases/download/v{{ harbor_version }}/harbor-offline-installer-v{{ harbor_version }}.tgz"
     dest: "/tmp/harbor.tgz"
+  run_once: true
 
 - name: Extrair Harbor
   unarchive:

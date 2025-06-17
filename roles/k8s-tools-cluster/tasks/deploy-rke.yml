@@ -1,26 +1,75 @@
 ---
+- name: Remover binário RKE antigo (se existir)
+  file:
+    path: /usr/local/bin/rke
+    state: absent
+  become: true
+
 - name: Baixar binário do RKE
   get_url:
     url: "https://github.com/rancher/rke/releases/download/{{ RKE_VERSION }}/rke_linux-amd64"
     dest: /usr/local/bin/rke
     mode: '0755'
   when: not ansible_check_mode
-  become: yes
+  become: true
 
 - name: Gerar cluster.yml a partir do template
   template:
     src: cluster.yml.j2
-    dest: ./cluster.yml
+    dest: "{{ ansible_user_dir }}/cluster.yml"
+    mode: '0644'
+
+- name: Ler o conteúdo do cluster.yml gerado no servidor remoto
+  ansible.builtin.slurp:
+    src: "{{ ansible_user_dir }}/cluster.yml"
+  register: generated_cluster_yml
+
+- name: IMPRIMIR o conteúdo do template montado
+  ansible.builtin.debug:
+    msg: "{{ generated_cluster_yml.content | b64decode }}"
 
 - name: Executar RKE para criar o cluster
   command: rke up --config cluster.yml
   args:
-    chdir: /vagrant
+    chdir: "{{ ansible_user_dir }}"
+  run_once: true
   register: rke_output
   changed_when: "'Cluster deployed successfully' in rke_output.stdout"
 
+- name: Criar diretório .kube se não existir
+  ansible.builtin.file:
+    path: "{{ ansible_user_dir }}/.kube"
+    state: directory
+    mode: '0755'
+
 - name: Copiar kubeconfig para ~/.kube
   copy:
-    src: ./kube_config_cluster.yml
-    dest: "{{ ansible_env.HOME }}/.kube/config-k8s-tools"
-    remote_src: no
+    src: "{{ ansible_user_dir }}/kube_config_cluster.yml"
+    dest: "{{ ansible_user_dir }}/.kube/config"
+    remote_src: yes
+    mode: '0600'
+    backup: yes
+  run_once: true
+
+- name: Baixar binário kubectl
+  get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: '0755'
+  become: true
+
+- name: Verificar instalação do kubectl
+  command: kubectl version --client
+  register: kubectl_version_check
+  ignore_errors: true
+
+- name: Mostrar versão do kubectl
+  debug:
+    msg: "{{ kubectl_version_check.stdout }}"
+
+- name: Verificar nós do cluster Kubernetes
+  command: kubectl --kubeconfig={{ ansible_user_dir }}/.kube/config get nodes
+  register: kubectl_get_nodes
+  failed_when: kubectl_get_nodes.rc != 0
+  run_once: true
+

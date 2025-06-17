@@ -3,3 +3,5 @@
 .vagrant/pgm*
 hosts_*
 Vagrantfile
+.venv
+.env

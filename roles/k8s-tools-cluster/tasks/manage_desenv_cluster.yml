@@ -1,24 +1,67 @@
 ---
 - name: Install Rancher CLI on k8s-tools-controlplane
-  become: yes
+  become: true
   get_url:
-    url: "https://github.com/rancher/cli/releases/download/v2.8.0/rancher-linux-amd64-v2.8.0.tar.gz" # Check for latest version
+    url: "https://github.com/rancher/cli/releases/download/{{ rancher_version }}/rancher-linux-amd64-{{ rancher_version }}.tar.gz" # Check for latest version
     dest: "/tmp/rancher-cli.tar.gz"
     mode: '0644'
   when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
 
-- name: Extract Rancher CLI
-  become: yes
-  unarchive:
-    src: "/tmp/rancher-cli.tar.gz"
-    dest: "/usr/local/bin/"
-    extra_opts: ["--strip-components=2", "rancher-v2.8.0/rancher"] # Adjust path based on tar structure
+- name: Create a temporary directory for extraction
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: rancher
+  register: temp_dir
+
+- name: Extract Rancher CLI archive
+  ansible.builtin.unarchive:
+    src: /tmp/rancher-cli.tar.gz
+    dest: "{{ temp_dir.path }}"
     remote_src: yes
-    creates: "/usr/local/bin/rancher"
-  when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
+
+- name: Find the rancher executable within the extracted files
+  ansible.builtin.find:
+    paths: "{{ temp_dir.path }}"
+    patterns: "rancher"
+    file_type: "file"
+    recurse: yes
+  register: found_rancher_binary
+
+- name: Fail if rancher binary was not found in the archive
+  ansible.builtin.fail:
+    msg: "Could not find the 'rancher' executable in the extracted archive. Please check the archive's contents."
+  when: found_rancher_binary.files | length == 0
+
+- name: Move rancher binary to /usr/local/bin
+  become: true
+  ansible.builtin.copy:
+    # Use the path discovered by the find module
+    src: "{{ found_rancher_binary.files[0].path }}"
+    dest: /usr/local/bin/rancher
+    mode: '0755'
+    remote_src: yes
+
+- name: Clean up temporary directory
+  ansible.builtin.file:
+    path: "{{ temp_dir.path }}"
+    state: absent
+  when: temp_dir.path is defined
+
+
+
+
+# - name: Extract Rancher CLI
+#   become: true
+#   unarchive:
+#     src: "/tmp/rancher-cli.tar.gz"
+#     dest: "/usr/local/bin/"
+#     extra_opts: ["--strip-components=2", "rancher-v2.8.0/rancher"] # Adjust path based on tar structure
+#     remote_src: yes
+#     creates: "/usr/local/bin/rancher"
+#   when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
 
 - name: Ensure Rancher CLI is executable
-  become: yes
+  become: true
   file:
     path: "/usr/local/bin/rancher"
     mode: "a+x"

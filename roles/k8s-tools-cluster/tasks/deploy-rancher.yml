@@ -4,7 +4,7 @@
     - name: Check if Helm is installed
       command: helm version
       register: helm_check
-      ignore_errors: yes
+      ignore_errors: true
       changed_when: false
 
     - name: Install Helm
@@ -13,11 +13,11 @@
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
       args:
         warn: false # Suppress warning about using shell
-      become: yes # Helm install might need sudo
+      become: true # Helm install might need sudo
   when: false # Disable Helm for now, focusing on Docker install.
 
 - name: Install Rancher using Docker
-  become: yes # Docker operations usually require sudo
+  become: true # Docker operations usually require sudo
   docker_container:
     name: rancher
     image: "rancher/rancher:{{ rancher_version }}"
