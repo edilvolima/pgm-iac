@@ -6,6 +6,7 @@
   changed_when: false
   failed_when: rke_output.rc != 0
   when: not ansible_check_mode
+  run_once: true
 
 - name: Verificar nós
   command: |
@@ -14,6 +15,7 @@
   changed_when: false
   failed_when: rke_output.rc != 0
   when: not ansible_check_mode
+  run_once: true
 
 - name: Verificar pods do sistema
   command: |
@@ -22,3 +24,4 @@
   changed_when: false
   failed_when: rke_output.rc != 0
   when: not ansible_check_mode
+  run_once: true

@@ -1,47 +1,47 @@
 ---
-- name: Verify k8s-tools cluster deployment
-  hosts: k8s-tools-controlplane[0] # Target the first control plane node
-  become: no # kubectl commands usually run as the user
+- name: Verificar implantação do cluster k8s-tools
+  hosts: k8s-tools-controlplane[0] # Alvejar o primeiro nó do control plane
+  become: no # Comandos kubectl geralmente rodam como o usuário
   gather_facts: no
 
   vars:
     kubeconfig_path: "{{ ansible_env.HOME }}/.kube/config-k8s-tools"
 
   tasks:
-    - name: Check if kubeconfig file exists
+    - name: Verificar se o arquivo kubeconfig existe
       stat:
         path: "{{ kubeconfig_path }}"
       register: kubeconfig_stat
 
-    - name: Assert kubeconfig file exists
+    - name: Afirmar que o arquivo kubeconfig existe
       assert:
         that:
           - kubeconfig_stat.stat.exists
           - kubeconfig_stat.stat.isreg
-        fail_msg: "Kubeconfig file {{ kubeconfig_path }} does not exist or is not a regular file."
-        success_msg: "Kubeconfig file {{ kubeconfig_path }} found."
+        fail_msg: "O arquivo Kubeconfig {{ kubeconfig_path }} não existe ou não é um arquivo regular."
+        success_msg: "Arquivo Kubeconfig {{ kubeconfig_path }} encontrado."
 
-    - name: Get Kubernetes nodes
+    - name: Obter nós do Kubernetes
       command: "kubectl --kubeconfig {{ kubeconfig_path }} get nodes -o wide"
       register: kubectl_get_nodes
-      changed_when: false # This command does not change state
+      changed_when: false # Este comando não altera o estado
 
-    - name: Display kubectl get nodes output
+    - name: Exibir saída de kubectl get nodes
       debug:
         var: kubectl_get_nodes.stdout_lines
 
-    - name: Assert kubectl get nodes was successful
+    - name: Afirmar que kubectl get nodes foi bem-sucedido
       assert:
         that:
           - kubectl_get_nodes.rc == 0
-        fail_msg: "kubectl get nodes command failed. RC={{ kubectl_get_nodes.rc }}, STDERR={{ kubectl_get_nodes.stderr }}"
-        success_msg: "kubectl get nodes command was successful."
+        fail_msg: "O comando kubectl get nodes falhou. RC={{ kubectl_get_nodes.rc }}, STDERR={{ kubectl_get_nodes.stderr }}"
+        success_msg: "O comando kubectl get nodes foi bem-sucedido."
 
-    - name: Assert all nodes are in 'Ready' state
+    - name: Afirmar que todos os nós estão no estado 'Ready'
       assert:
         that:
-          - "' Ready ' in item" # Check for ' Ready ' (with spaces) to avoid matching 'NotReady'
-        fail_msg: "Node {{ item.split(' ')[0] }} is not in 'Ready' state. Full line: {{ item }}" # Assumes first element is node name
-        success_msg: "All checked lines indicate a 'Ready' status."
-      loop: "{{ kubectl_get_nodes.stdout_lines[1:] }}" # Skip the header line
-      when: kubectl_get_nodes.stdout_lines | length > 1 # Only run if there are node lines
+          - "' Ready ' in item" # Verificar por ' Ready ' (com espaços) para evitar correspondência com 'NotReady'
+        fail_msg: "Nó {{ item.split(' ')[0] }} não está no estado 'Ready'. Linha completa: {{ item }}" # Assume que o primeiro elemento é o nome do nó
+        success_msg: "Todas as linhas verificadas indicam um status 'Ready'."
+      loop: "{{ kubectl_get_nodes.stdout_lines[1:] }}" # Pular a linha de cabeçalho
+      when: kubectl_get_nodes.stdout_lines | length > 1 # Executar somente se houver linhas de nó

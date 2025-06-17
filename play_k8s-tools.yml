@@ -1,12 +1,12 @@
 ---
-- name: Deploy k8s-tools cluster, Rancher, and configure management
+- name: Implantar cluster k8s-tools, Rancher, e configurar gerenciamento
   hosts: k8s-tools-controlplane, k8s-tools-worker1
   become: yes
   gather_facts: yes
   roles:
     - role: k8s-tools-cluster
-      # The role 'k8s-tools-cluster' is designed to:
-      # - Run common setup (user, sudo) on all targeted hosts.
-      # - Run RKE tasks on the first control plane node (delegated or run_once logic implied by RKE execution).
-      # - Run Rancher deployment on the first control plane node (explicitly conditioned).
-      # - Run manage_desenv_cluster tasks on the first control plane node (explicitly conditioned).
+      # A role 'k8s-tools-cluster' é projetada para:
+      # - Executar configuração comum (usuário, sudo) em todos os hosts de destino.
+      # - Executar tasks RKE no primeiro nó do control plane (lógica delegada ou run_once implícita pela execução do RKE).
+      # - Executar a implantação do Rancher no primeiro nó do control plane (condicionada explicitamente).
+      # - Executar tasks manage_desenv_cluster no primeiro nó do control plane (condicionada explicitamente).

@@ -1,5 +1,5 @@
 ---
-- name: Ensure decompression utilities are installed (Debian/Ubuntu)
+- name: Garantir que utilitários de descompressão estejam instalados (Debian/Ubuntu)
   ansible.builtin.apt:
     name:
       - tar
@@ -9,12 +9,12 @@
       - unzip
       - zstd
     state: present
-    update_cache: yes # Ensure package cache is updated
-  become: yes # Required to install packages
+    update_cache: yes # Garantir que o cache de pacotes seja atualizado
+  become: yes # Necessário para instalar pacotes
   when: "ansible_facts['distribution'] == 'Ubuntu' or ansible_facts['distribution'] == 'Debian'"
   
-# ... (existing tasks for user creation, sudo, RKE deployment)
-- name: Create user 'pgm-user'
+# ... (tasks existentes para criação de usuário, sudo, implantação RKE)
+- name: Criar usuário 'pgm-user'
   user:
     name: pgm-user
     groups: docker
@@ -23,33 +23,33 @@
     state: present
   become: true
 
-- name: Configure sudo without password for 'pgm-user'
+- name: Configurar sudo sem senha para 'pgm-user'
   copy:
     dest: /etc/sudoers.d/pgm-user
     content: "pgm-user ALL=(ALL) NOPASSWD: ALL"
   become: true
 
-- name: Ensure $HOME/.kube directory exists
+- name: Garantir que o diretório $HOME/.kube exista
   file:
-    path: "{{ ansible_env.HOME }}/.kube" # Use ansible_env.HOME for robustness
+    path: "{{ ansible_env.HOME }}/.kube" # Usar ansible_env.HOME para robustez
     state: directory
     mode: '0755'
-  run_once: true # Should run once, typically on the control node or where kubectl will be used
-  become: true # Usually user's home directory, but depends on Ansible connection user
+  run_once: true # Deve rodar uma vez, geralmente no nó de controle ou onde kubectl será usado
+  become: true # Geralmente o diretório home do usuário, mas depende do usuário de conexão Ansible
 
 - include_tasks: deploy-rke.yml
-  # This should target the control plane node or run_once if rke is executed from ansible master
-  # For simplicity, let's assume the play targets k8s-tools-controlplane for these tasks
+  # Isso deve alvejar o nó do control plane ou run_once se o rke for executado do master ansible
+  # Por simplicidade, vamos assumir que o play alveja k8s-tools-controlplane para estas tasks
 
 - include_tasks: verificacao-rke.yml
-  # Similar targeting as deploy-rke.yml
+  # Alvejamento similar ao deploy-rke.yml
 
-- name: Deploy Rancher
+- name: Implantar Rancher
   include_tasks: deploy-rancher.yml
-  # This should also target the k8s-tools-controlplane node(s)
-  # The tasks inside deploy-rancher.yml use `when: inventory_hostname in groups['k8s-tools-controlplane'][0]`
+  # Isso também deve alvejar o(s) nó(s) k8s-tools-controlplane
+  # As tasks dentro de deploy-rancher.yml usam `when: inventory_hostname in groups['k8s-tools-controlplane'][0]`
 
-- name: Import k8s-desenv Cluster into k8s-tools Rancher (Guidance)
+- name: Importar Cluster k8s-desenv para o Rancher k8s-tools (Orientação)
   include_tasks: manage_desenv_cluster.yml
-  # This should also target the k8s-tools-controlplane node(s)
-  when: "inventory_hostname in groups['k8s-tools-controlplane'][0]" # Ensure it runs on the correct host
+  # Isso também deve alvejar o(s) nó(s) k8s-tools-controlplane
+  when: "inventory_hostname in groups['k8s-tools-controlplane'][0]" # Garantir que rode no host correto

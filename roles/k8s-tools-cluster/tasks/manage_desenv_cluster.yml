@@ -1,25 +1,25 @@
 ---
-- name: Install Rancher CLI on k8s-tools-controlplane
+- name: Instalar Rancher CLI no k8s-tools-controlplane
   become: true
   get_url:
-    url: "https://github.com/rancher/cli/releases/download/{{ rancher_version }}/rancher-linux-amd64-{{ rancher_version }}.tar.gz" # Check for latest version
+    url: "https://github.com/rancher/cli/releases/download/{{ rancher_version }}/rancher-linux-amd64-{{ rancher_version }}.tar.gz" # Verificar a versão mais recente
     dest: "/tmp/rancher-cli.tar.gz"
     mode: '0644'
   when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
 
-- name: Create a temporary directory for extraction
+- name: Criar um diretório temporário para extração
   ansible.builtin.tempfile:
     state: directory
     suffix: rancher
   register: temp_dir
 
-- name: Extract Rancher CLI archive
+- name: Extrair arquivo da Rancher CLI
   ansible.builtin.unarchive:
     src: /tmp/rancher-cli.tar.gz
     dest: "{{ temp_dir.path }}"
     remote_src: yes
 
-- name: Find the rancher executable within the extracted files
+- name: Encontrar o executável rancher dentro dos arquivos extraídos
   ansible.builtin.find:
     paths: "{{ temp_dir.path }}"
     patterns: "rancher"
@@ -27,40 +27,38 @@
     recurse: yes
   register: found_rancher_binary
 
-- name: Fail if rancher binary was not found in the archive
+- name: Falhar se o binário rancher não foi encontrado no arquivo
   ansible.builtin.fail:
-    msg: "Could not find the 'rancher' executable in the extracted archive. Please check the archive's contents."
+    msg: "Não foi possível encontrar o executável 'rancher' no arquivo extraído. Verifique o conteúdo do arquivo."
   when: found_rancher_binary.files | length == 0
 
-- name: Move rancher binary to /usr/local/bin
+- name: Mover binário rancher para /usr/local/bin
   become: true
   ansible.builtin.copy:
-    # Use the path discovered by the find module
+    # Usar o caminho descoberto pelo módulo find
     src: "{{ found_rancher_binary.files[0].path }}"
     dest: /usr/local/bin/rancher
     mode: '0755'
     remote_src: yes
 
-- name: Clean up temporary directory
+- name: Limpar diretório temporário
   ansible.builtin.file:
     path: "{{ temp_dir.path }}"
     state: absent
   when: temp_dir.path is defined
 
-
-
-
+# DEPRECATED: Código antigo comentado abaixo
 # - name: Extract Rancher CLI
 #   become: true
 #   unarchive:
 #     src: "/tmp/rancher-cli.tar.gz"
 #     dest: "/usr/local/bin/"
-#     extra_opts: ["--strip-components=2", "rancher-v2.8.0/rancher"] # Adjust path based on tar structure
+#     extra_opts: ["--strip-components=2", "rancher-v2.8.0/rancher"] # Ajustar caminho baseado na estrutura do tar
 #     remote_src: yes
 #     creates: "/usr/local/bin/rancher"
 #   when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
 
-- name: Ensure Rancher CLI is executable
+- name: Garantir que a Rancher CLI seja executável
   become: true
   file:
     path: "/usr/local/bin/rancher"
@@ -68,36 +66,36 @@
     state: file
   when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"
 
-- name: Display instructions for importing k8s-desenv cluster
+- name: Exibir instruções para importar cluster k8s-desenv
   debug:
     msg: |
       #################################################################################
-      ## Manual Steps Required to Import 'k8s-desenv' Cluster into 'k8s-tools' Rancher ##
+      ## Passos Manuais Necessários para Importar o Cluster 'k8s-desenv' no Rancher 'k8s-tools' ##
       #################################################################################
-      1. Log in to the 'k8s-tools' Rancher UI at:
+      1. Faça login na UI do Rancher 'k8s-tools' em:
          https://{{ hostvars[groups['k8s-tools-controlplane'][0]]['ansible_host'] | default(groups['k8s-tools-controlplane'][0]) }}:{{ rancher_port }}
-         User: admin, Password: {{ rancher_bootstrap_password }} (or your updated password)
+         Usuário: admin, Senha: {{ rancher_bootstrap_password }} (ou sua senha atualizada)
 
-      2. Once logged in, navigate to 'Cluster Management' and click 'Import Existing'.
-         Choose 'Generic' as the cluster type. Give it a name (e.g., 'k8s-desenv').
+      2. Após o login, navegue para 'Gerenciamento de Cluster' e clique em 'Importar Existente'.
+         Escolha 'Genérico' como o tipo de cluster. Dê um nome (ex: 'k8s-desenv').
 
-      3. Rancher will provide a command similar to:
-         `kubectl apply -f <URL_PROVIDED_BY_RANCHER>`
+      3. O Rancher fornecerá um comando similar a:
+         `kubectl apply -f <URL_FORNECIDA_PELO_RANCHER>`
 
-      4. On a machine with access to the 'k8s-desenv' cluster's kubeconfig (e.g., this Ansible control node, or the k8s-desenv-controlplane):
-         Ensure KUBECONFIG is set to the path of 'k8s-desenv' cluster's config:
+      4. Em uma máquina com acesso ao kubeconfig do cluster 'k8s-desenv' (ex: este nó de controle Ansible, ou o k8s-desenv-controlplane):
+         Garanta que KUBECONFIG esteja definido para o caminho do config do cluster 'k8s-desenv':
          `export KUBECONFIG={{ ansible_env.HOME }}/.kube/config-k8s-desenv`
-         Then run the `kubectl apply ...` command provided by Rancher in step 3.
+         Então execute o comando `kubectl apply ...` fornecido pelo Rancher no passo 3.
 
-      5. Alternatively, using Rancher CLI on {{ groups['k8s-tools-controlplane'][0] }}:
-         a. Login to Rancher CLI (this might be interactive or require API key setup):
+      5. Alternativamente, usando a CLI do Rancher em {{ groups['k8s-tools-controlplane'][0] }}:
+         a. Faça login na CLI do Rancher (isso pode ser interativo ou requerer configuração de chave API):
             `rancher login https://{{ hostvars[groups['k8s-tools-controlplane'][0]]['ansible_host'] | default(groups['k8s-tools-controlplane'][0]) }}:{{ rancher_port }} --token <API_TOKEN>`
-            (You may need to create an API token in the Rancher UI first for the admin user)
-         b. Once logged in and context is set, you would typically register the cluster.
-            The exact Rancher CLI commands for cluster import can be complex and version-specific.
-            Using the UI method (steps 2-4) is generally more straightforward for a one-time import.
+            (Você pode precisar criar um token API na UI do Rancher primeiro para o usuário admin)
+         b. Após o login e com o contexto definido, você normalmente registraria o cluster.
+            Os comandos exatos da CLI do Rancher para importação de cluster podem ser complexos e específicos da versão.
+            Usar o método da UI (passos 2-4) é geralmente mais direto para uma importação única.
 
-      This step requires manual intervention due to the complexity of fully automating
-      secure cluster import via API without dedicated Ansible modules for Rancher.
-      The kubeconfig for 'k8s-desenv' is at: {{ ansible_env.HOME }}/.kube/config-k8s-desenv on the machine where Ansible ran.
+      Este passo requer intervenção manual devido à complexidade de automatizar totalmente
+      a importação segura de cluster via API sem módulos Ansible dedicados para o Rancher.
+      O kubeconfig para 'k8s-desenv' está em: {{ ansible_env.HOME }}/.kube/config-k8s-desenv na máquina onde o Ansible rodou.
   when: "inventory_hostname in groups['k8s-tools-controlplane'][0]"

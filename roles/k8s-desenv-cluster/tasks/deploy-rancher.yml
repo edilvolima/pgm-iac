@@ -1,44 +1,44 @@
 ---
-- name: Ensure Helm is installed (if needed for Rancher, though we'll try Docker first)
+- name: Garantir que o Helm esteja instalado (se necessário para o Rancher, embora tentaremos Docker primeiro)
   block:
-    - name: Check if Helm is installed
+    - name: Verificar se o Helm está instalado
       command: helm version
       register: helm_check
-      ignore_errors: yes
+      ignore_errors: true
       changed_when: false
 
-    - name: Install Helm
+    - name: Instalar Helm
       when: helm_check.failed
       shell: |
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
       args:
-        warn: false # Suppress warning about using shell
-      become: yes # Helm install might need sudo
-  when: false # Disable Helm for now, focusing on Docker install.
+        warn: false # Suprimir aviso sobre o uso do shell
+      become: true # Instalação do Helm pode precisar de sudo
+  when: false # Desabilitar Helm por enquanto, focando na instalação Docker.
 
-- name: Install Rancher using Docker
-  become: yes # Docker operations usually require sudo
+- name: Instalar Rancher usando Docker
+  become: true # Operações Docker geralmente requerem sudo
   docker_container:
     name: rancher
     image: "rancher/rancher:{{ rancher_version }}"
     ports:
-      - "{{ rancher_port }}:443" # Rancher listens on 443 internally, map to custom rancher_port
-      - "8080:80" # For http redirection to https, map to a different host port if 80 is taken
+      - "{{ rancher_port }}:443" # Rancher escuta na 443 internamente, mapear para rancher_port personalizada
+      - "8080:80" # Para redirecionamento http para https, mapear para uma porta de host diferente se 80 estiver ocupada
     volumes:
-      - "{{ ROOT_DATA_DIR }}/rancher:/var/lib/rancher" # Persist Rancher data
+      - "{{ ROOT_DATA_DIR }}/rancher:/var/lib/rancher" # Persistir dados do Rancher
     restart_policy: unless-stopped
-    privileged: yes # Rancher container often requires privileged mode
-    command: # Add command arguments if needed, e.g. for custom certs or bootstrap password (though bootstrap password set via env var is common)
+    privileged: yes # Contêiner do Rancher frequentemente requer modo privilegiado
+    command: # Adicionar argumentos de comando se necessário, ex: para certs personalizados ou senha de bootstrap (embora a senha de bootstrap definida via var de ambiente seja comum)
   environment:
-    # For custom certs, you'd set SSL_CERT_DIR, etc.
-    # For initial bootstrap password (Rancher >=2.5)
+    # Para certs personalizados, você definiria SSL_CERT_DIR, etc.
+    # Para senha inicial de bootstrap (Rancher >=2.5)
     CATTLE_BOOTSTRAP_PASSWORD: "{{ rancher_bootstrap_password }}"
-  when: "inventory_hostname in groups['k8s-desenv-controlplane'][0]" # Run only on the first control plane node
+  when: "inventory_hostname in groups['k8s-desenv-controlplane'][0]" # Executar apenas no primeiro nó do control plane
 
-- name: Wait for Rancher to be ready
+- name: Aguardar Rancher estar pronto
   uri:
     url: "https://{{ hostvars[groups['k8s-desenv-controlplane'][0]]['ansible_host'] | default(groups['k8s-desenv-controlplane'][0]) }}:{{ rancher_port }}/ping"
-    validate_certs: no # Self-signed cert initially
+    validate_certs: no # Certificado autoassinado inicialmente
     method: GET
   register: rancher_ping
   until: rancher_ping.status == 200
@@ -46,14 +46,14 @@
   delay: 10
   when: "inventory_hostname in groups['k8s-desenv-controlplane'][0]"
 
-- name: Display Rancher URL and Bootstrap Password
+- name: Exibir URL do Rancher e Senha de Bootstrap
   debug:
     msg: |
-      Rancher should be accessible at: https://{{ hostvars[groups['k8s-desenv-controlplane'][0]]['ansible_host'] | default(groups['k8s-desenv-controlplane'][0]) }}:{{ rancher_port }}
-      Initial bootstrap password: {{ rancher_bootstrap_password }}
-      Ensure hostname '{{ rancher_hostname }}' (if you used a hostname for rancher_hostname var) resolves to {{ hostvars[groups['k8s-desenv-controlplane'][0]]['ansible_host'] | default(groups['k8s-desenv-controlplane'][0]) }}
+      Rancher deve estar acessível em: https://{{ hostvars[groups['k8s-desenv-controlplane'][0]]['ansible_host'] | default(groups['k8s-desenv-controlplane'][0]) }}:{{ rancher_port }}
+      Senha de bootstrap inicial: {{ rancher_bootstrap_password }}
+      Garanta que o hostname '{{ rancher_hostname }}' (se você usou um hostname para a variável rancher_hostname) resolva para {{ hostvars[groups['k8s-desenv-controlplane'][0]]['ansible_host'] | default(groups['k8s-desenv-controlplane'][0]) }}
   when: "inventory_hostname in groups['k8s-desenv-controlplane'][0]"
 
-# Further tasks would involve using the Rancher API to configure the local cluster if needed,
-# but Rancher typically automatically imports the cluster it's running on (RKE-deployed).
-# For now, manual configuration via UI after this point is assumed for simplicity.
+# Tarefas futuras envolveriam o uso da API do Rancher para configurar o cluster local, se necessário,
+# mas o Rancher normalmente importa automaticamente o cluster em que está sendo executado (implantado com RKE).
+# Por enquanto, a configuração manual via UI após este ponto é assumida para simplicidade.
