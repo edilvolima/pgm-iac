@@ -1,0 +1,73 @@
+---
+- name: Prepare nodes for k3s installation
+  shell: |
+    swapoff -a
+    sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+    modprobe br_netfilter
+    echo "br_netfilter" > /etc/modules-load.d/k3s.conf
+    sysctl -p
+  become: yes
+
+- name: Install k3s on master node
+  shell: "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='server --cluster-init --cluster-name k3s-tools' sh -"
+  when: "inventory_hostname in groups['k3s-master']"
+  become: yes
+
+- name: Get k3s join token from master
+  shell: "cat /var/lib/rancher/k3s/server/node-token"
+  register: k3s_join_token
+  when: "inventory_hostname in groups['k3s-master']"
+  become: yes
+
+- name: Install k3s on worker nodes
+  shell: "curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars[groups['k3s-master'][0]]['ansible_host'] }}:6443 K3S_TOKEN={{ hostvars[groups['k3s-master'][0]]['k3s_join_token'].stdout }} sh -"
+  when: "inventory_hostname in groups['k3s-workers']"
+  become: yes
+
+- name: Fetch k3s config file
+  fetch:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "{{ ansible_env.HOME }}/.kube/config-k3s-tools"
+    flat: yes
+  when: "inventory_hostname in groups['k3s-master']"
+  become: yes
+
+- name: Install Helm
+  shell: |
+    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    chmod 700 get_helm.sh
+    ./get_helm.sh
+  args:
+    creates: /usr/local/bin/helm
+  when: "inventory_hostname in groups['k3s-master']"
+  become: yes
+
+- name: Add Portainer Helm repository
+  shell: "helm repo add portainer https://portainer.github.io/k8s/"
+  args:
+    creates: "$HOME/.config/helm/repositories.yaml" # This is a simple check, a more robust one would parse the file
+  when: "inventory_hostname in groups['k3s-master']"
+  become: yes
+  environment:
+    KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
+
+- name: Set Portainer admin password
+  set_fact:
+    portainer_admin_password: "{{ lookup('password', '/dev/null length=16') }}"
+  when: "inventory_hostname in groups['k3s-master']"
+  run_once: true
+
+- name: Deploy Portainer
+  shell: "helm upgrade --install --create-namespace -n portainer portainer portainer/portainer --set service.type=NodePort --set service.nodePort=30000 --set persistence.enabled=true --set persistence.storageClass=local-path --set adminPassword.create=false --set adminPassword.password={{ portainer_admin_password | quote }}"
+  when: "inventory_hostname in groups['k3s-master']"
+  become: yes
+  environment:
+    KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
+
+- name: Display Portainer access information
+  debug:
+    msg:
+      - "Portainer URL: http://{{ hostvars[groups['k3s-master'][0]]['ansible_host'] }}:30000"
+      - "Portainer admin user: admin"
+      - "Portainer admin password: {{ portainer_admin_password }}"
+  when: "inventory_hostname in groups['k3s-master']"

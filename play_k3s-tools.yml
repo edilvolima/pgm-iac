@@ -1,0 +1,7 @@
+---
+- name: Deploy k3s tools cluster
+  hosts: k3s-master, k3s-workers
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: k3s-tools
