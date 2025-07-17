@@ -10,13 +10,13 @@
       - zstd
     state: present
     update_cache: yes # Ensure package cache is updated
-  become: yes # Required to install packages
+  become: true # Required to install packages
   when: "ansible_facts['distribution'] == 'Ubuntu' or ansible_facts['distribution'] == 'Debian'"
-  
+
 # ... (existing tasks for user creation, sudo, RKE deployment)
-- name: Create user 'pgm-user'
+- name: Create user 'pgm_user'
   user:
-    name: pgm-user
+    name: pgm_user
     groups: docker
     append: yes
     shell: /bin/bash
@@ -25,9 +25,24 @@
 
 - name: Configure sudo without password for 'pgm-user'
   copy:
-    dest: /etc/sudoers.d/pgm-user
-    content: "pgm-user ALL=(ALL) NOPASSWD: ALL"
+    dest: /etc/sudoers.d/pgm_user
+    content: "pgm_user ALL=(ALL) NOPASSWD: ALL"
   become: true
+
+- name: Garantir diretório .ssh
+  file:
+    path: "{{ ansible_env.HOME }}/.ssh"
+    state: directory
+    mode: '0700'
+  run_once: true
+
+- name: Copiar chave SSH
+  copy:
+    src: "/home/pgmadmin/.ssh/id_rsa"  # CAMINHO LOCAL DA SUA CHAVE
+    dest: "{{ ssh_key_path }}"
+    mode: '0600'
+  run_once: true
+  when: not ansible_check_mode
 
 - name: Ensure $HOME/.kube directory exists
   file:
@@ -35,7 +50,7 @@
     state: directory
     mode: '0755'
   run_once: true # Should run once, typically on the control node or where kubectl will be used
-  become: true # Usually user's home directory, but depends on Ansible connection user
+  # become: true # Usually user's home directory, but depends on Ansible connection user
 
 - include_tasks: deploy-rke.yml
   # This should target the control plane node or run_once if rke is executed from ansible master

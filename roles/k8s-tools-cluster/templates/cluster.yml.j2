@@ -13,7 +13,7 @@ nodes:
 {% for role in roles %}
     - {{ role }}
 {% endfor %}
-  ssh_key_path: "/home/pgm_user/.ssh/id_rsa" 
+  ssh_key_path: {{ ssh_key_path }}
 {% endfor %}
 {% endfor %}
 

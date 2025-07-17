@@ -6,3 +6,4 @@ rancher_hostname: "rancher.k8s-tools.local"
 rancher_bootstrap_password: "adminadminadmin"
 rancher_port: 8443
 rke_dir: "$HOME/rke"
+ssh_key_path: "{{ ansible_env.HOME }}/.ssh/id_rsa"

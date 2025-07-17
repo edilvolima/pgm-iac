@@ -32,8 +32,10 @@
   command: rke up --config cluster.yml
   args:
     chdir: "{{ ansible_user_dir }}"
-  run_once: true
+  environment:
+      SSH_AUTH_SOCK: ""
   register: rke_output
+  run_once: true
   changed_when: "'Cluster deployed successfully' in rke_output.stdout"
 
 - name: Criar diretório .kube se não existir
@@ -50,6 +52,7 @@
     mode: '0600'
     backup: yes
   run_once: true
+  become: true
 
 - name: Baixar binário kubectl
   get_url:
