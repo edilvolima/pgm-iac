@@ -9,7 +9,10 @@
   become: yes
 
 - name: Install k3s on master node
-  shell: "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='server --cluster-init --cluster-name k3s-tools' sh -"
+  shell: |
+    curl -sfL https://get.k3s.io | sh -
+    export INSTALL_K3S_EXEC="server --cluster-init --cluster-name k3s-tools"
+
   when: "inventory_hostname in groups['k3s-master']"
   become: yes
 
@@ -19,18 +22,27 @@
   when: "inventory_hostname in groups['k3s-master']"
   become: yes
 
+- name: Set k3s master IP
+  set_fact:
+    k3s_master_ip: "{{ ansible_default_ipv4.address }}"
+  when: "inventory_hostname in groups['k3s-master']"
+
 - name: Install k3s on worker nodes
-  shell: "curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars[groups['k3s-master'][0]]['ansible_host'] }}:6443 K3S_TOKEN={{ hostvars[groups['k3s-master'][0]]['k3s_join_token'].stdout }} sh -"
+  shell: >
+    curl -sfL https://get.k3s.io | 
+    K3S_URL=https://{{ hostvars[groups['k3s-master'][0]]['k3s_master_ip'] }}:6443 
+    K3S_TOKEN={{ hostvars[groups['k3s-master'][0]]['k3s_join_token'].stdout }} 
+    sh -
   when: "inventory_hostname in groups['k3s-workers']"
   become: yes
 
 - name: Fetch k3s config file
   fetch:
     src: /etc/rancher/k3s/k3s.yaml
-    dest: "{{ ansible_env.HOME }}/.kube/config-k3s-tools"
+    dest: "{{ lookup('env','HOME') }}/.kube/config-k3s-tools"
     flat: yes
-  when: "inventory_hostname in groups['k3s-master']"
   become: yes
+  when: "inventory_hostname in groups['k3s-master']"
 
 - name: Install Helm
   shell: |
@@ -58,16 +70,31 @@
   run_once: true
 
 - name: Deploy Portainer
-  shell: "helm upgrade --install --create-namespace -n portainer portainer portainer/portainer --set service.type=NodePort --set service.nodePort=30000 --set persistence.enabled=true --set persistence.storageClass=local-path --set adminPassword.create=false --set adminPassword.password={{ portainer_admin_password | quote }}"
+  shell: "helm upgrade --install --create-namespace -n portainer portainer portainer/portainer --set service.type=NodePort  --set persistence.enabled=true --set persistence.storageClass=local-path --set adminPassword.create=false --set adminPassword.password={{ portainer_admin_password | quote }}"
   when: "inventory_hostname in groups['k3s-master']"
   become: yes
   environment:
     KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
 
+- name: Get Portainer NodePort
+  shell: "kubectl get svc portainer -n portainer -o jsonpath='{.spec.ports[0].nodePort}'"
+  register: portainer_nodeport
+  become: yes
+  when: "inventory_hostname in groups['k3s-master']"
+  environment:
+    KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
+
+- name: Restart Portainer deployment
+  shell: "kubectl rollout restart deployment portainer -n portainer"
+  environment:
+    KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
+  become: yes
+  when: "inventory_hostname in groups['k3s-master']"
+
 - name: Display Portainer access information
   debug:
     msg:
-      - "Portainer URL: http://{{ hostvars[groups['k3s-master'][0]]['ansible_host'] }}:30000"
+      - "Portainer URL: http://{{ hostvars[groups['k3s-master'][0]]['k3s_master_ip'] }}:{{ portainer_nodeport.stdout }}"
       - "Portainer admin user: admin"
       - "Portainer admin password: {{ portainer_admin_password }}"
   when: "inventory_hostname in groups['k3s-master']"
